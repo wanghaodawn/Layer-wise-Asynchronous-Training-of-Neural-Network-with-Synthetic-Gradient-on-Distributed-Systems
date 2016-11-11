@@ -13,7 +13,7 @@ import java.sql.Statement;
 
 import java.util.*;
 
-public class Model {
+public class DataModel {
     // Instance variables
     private List<Connection> connectionPool = new ArrayList<Connection>();
     private final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
@@ -24,7 +24,7 @@ public class Model {
     /**
      * Constructor
      */
-    public Model() throws Exception {
+    public DataModel() throws Exception {
         // Create table if not exists
         createTable();
     }

@@ -3,6 +3,12 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import java.util.*;
+import java.io.*;
+
 public class MasterServer {
     // Instance variables
     private static final String NODE_TYPE = "master";
@@ -16,9 +22,7 @@ public class MasterServer {
     private static Map<String, Integer> healthMap = new HashMap<String, Integer>();
     private static boolean hasInitMap = false;
     
-    private static String[] coreURL new String[]{
-        "localhost:8080"
-    };
+    private static String[] coreURL = new String[]{"http://localhost:8080"};
 
     public static void main(final String[] args) {
 
@@ -43,13 +47,21 @@ public class MasterServer {
 
         if (!hasInitMap) {
             for (String url : coreURL) {
-                healthMap.put(url, false);
+                healthMap.put(url, 0);
             }
             hasInitMap = true;
         }
 
+        // Check heart beat in a new thread
+        try {
+            checkHeartBeat();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+
         Undertow server = Undertow.builder()
-                .addListener(8080, "localhost")
+                .addListener(8000, "localhost")
                 .setHandler(new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -125,7 +137,7 @@ public class MasterServer {
                             String yStr = exchange.getQueryParameters().get("y").getFirst();
 
                             // Insert the record into database
-                            model.insert(level, xStr, wStr, yStr);
+                            dataModel.insert(level, xStr, wStr, yStr);
 
                             System.out.println("level: " + level);
                             System.out.println("x: " + xStr);
@@ -141,14 +153,14 @@ public class MasterServer {
                     }
                 }).build();
         server.start();
-        
-        System.out.println("Started server at http://127.1:8080/  Hit ^C to stop");
+
+        System.out.println("Started server at http://127.0.0.1:8000/  Hit ^C to stop");
     }
 
     /**
      * Check for heart beat
      */
-    private void checkHeartBeat() throws Exception {
+    private static void checkHeartBeat() throws Exception {
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -156,52 +168,68 @@ public class MasterServer {
                 while (true) {
                     
                     for (String url : coreURL) {
+
+                        // Skip failed server
+                        if (healthMap.get(url) == 2) {
+                            continue;
+                        }
+
                         // Maximum retry times for each server
                         int i = 0;
                         for (; i < MAX_RETRY_TIMES; i++) {
-                            URL obj = new URL(url);
-                            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-                            // Optional, default is GET
-                            con.setRequestMethod("GET");
+                            try {
+                                URL obj = new URL(url + "/heartbeat?");
+                                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-                            int responseCode = con.getResponseCode();
+                                // Optional, default is GET
+                                con.setRequestMethod("GET");
 
-                            // If invalid now, then wait for retry
-                            if (responseCode != 200) {
+                                int responseCode = con.getResponseCode();
+
+                                // If invalid now, then wait for retry
+                                if (responseCode != 200) {
+                                    try {
+                                        Thread.sleep(RETRY_INTERVAL);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    continue;
+                                }
+
+                                System.out.println("\nSending 'GET' request to URL : " + url);
+                                System.out.println("Response Code : " + responseCode);
+
+                                // Get response
+                                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                                String inputLine;
+                                StringBuffer response = new StringBuffer();
+
+                                while ((inputLine = in.readLine()) != null) {
+                                    response.append(inputLine);
+                                }
+
+                                in.close();
+
+                                // Get util
+                                double util = 0D;
+                                System.out.println(response.toString());
+                                String utilStr = response.toString().trim().split("\t")[1].trim();
                                 try {
-                                    Thread.sleep(RETRY_INTERVAL);
-                                } catch (InterruptedException e) {
+                                    util = Double.parseDouble(utilStr);
+                                } catch (NumberFormatException e) {
                                     e.printStackTrace();
                                 }
-                                continue;
-                            }
+                                // Insert heartbeat data into database
+                                heartBeatModel.insert(util);
 
-                            System.out.println("\nSending 'GET' request to URL : " + url);
-                            System.out.println("Response Code : " + responseCode);
+                                // If succeed, break
+                                break;
 
-                            // Get response
-                            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                            String inputLine;
-                            StringBuffer response = new StringBuffer();
-
-                            while ((inputLine = in.readLine()) != null) {
-                                response.append(inputLine);
-                            }
-
-                            in.close();
-
-                            // Get util
-                            double util = 0D;
-                            String utilStr = sb.toString().trim().split("\t")[1].trim();
-                            try {
-                                level = Double.parseDouble(utilStr);
-                            } catch (NumberFormatException e) {
+                            } catch (Exception e) {
                                 e.printStackTrace();
-                                exchange.getResponseSender().send("NumberFormatException in heartbeat");
                             }
-                            // Insert heartbeat data into database
-                            heartBeatModel.insert(util);
+                            
                         }
 
                         if (i == MAX_RETRY_TIMES) {
@@ -214,6 +242,7 @@ public class MasterServer {
                         }
                     }
 
+                    // Sleep, till next time to check heart beat
                     try {
                         Thread.sleep(SLEEP_INTERVAL);
                     } catch (InterruptedException e) {
@@ -225,6 +254,5 @@ public class MasterServer {
 
         Thread thread = new Thread(runnable);
         thread.start();
-        }
     }
 }
