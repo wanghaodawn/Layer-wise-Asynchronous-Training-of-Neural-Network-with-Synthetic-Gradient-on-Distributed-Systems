@@ -1,3 +1,8 @@
+/**
+ * Master Server
+ * Handles requests and provides the RESTful API
+ */
+
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -9,9 +14,17 @@ import java.net.URL;
 import java.util.*;
 import java.io.*;
 
+
 public class MasterServer {
+
     // Global variables
-    private static final String NODE_TYPE = "master";
+    private static final String NODE_TYPE = "MASTER";
+    private static final String DNS = "localhost";
+    private static final int PORT_NUM = 8000;
+
+    // Read file that contains the DNS of all slave nodes
+    private static boolean hasReadSlaveDNS = false;
+    private static List<String> slaveDNSList;
 
     // Input Data Model
     private static boolean hasInitInputDataModel = false;
@@ -24,7 +37,18 @@ public class MasterServer {
     private static final String gradientDataTableName = "true_gradient_table";
 
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
+        // Check input arguments
+        if (args == null || args.length != 1) {
+            System.err.println("Incorrect Number of Arguments");
+            System.exit(-1);
+        }
+
+        // Read Slave DNS
+        if (!hasReadSlaveDNS) {
+            readSlaveDNS(args[0]);
+            hasReadSlaveDNS = true;
+        }
 
         // Init InputDataModel
         try {
@@ -50,7 +74,7 @@ public class MasterServer {
 
         // Server
         Undertow server = Undertow.builder()
-                .addListener(8000, "localhost")
+                .addListener(PORT_NUM, DNS)
                 .setHandler(new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -245,5 +269,33 @@ public class MasterServer {
         System.out.println("level: " + level + "\titeration: " + iteration);
         System.out.println("true_gradient: " + true_gradient);
         System.out.println();
+    }
+
+
+    /**
+     * Get the DNS of all slave nodes
+     */
+    public static void readSlaveDNS(String fileName) throws Exception {
+
+        slaveDNSList = new ArrayList<String>();
+
+        File inFile = new File(fileName);
+        
+        // If file doesnt exists, then return error
+        if (!inFile.exists()) {
+            System.err.println("No file called: " + fileName);
+            System.exit(-1);
+        }
+
+        BufferedReader br = null;
+
+        // Read string from the input file
+        String sCurrentLine;
+        
+        br = new BufferedReader(new FileReader(inFile));
+
+        while ((sCurrentLine = br.readLine()) != null) {
+            slaveDNSList.add(sCurrentLine.trim());
+        }
     }
 }
