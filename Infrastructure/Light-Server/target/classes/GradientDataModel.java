@@ -137,7 +137,7 @@ public class GradientDataModel {
     /**
      * Get new record
      */
-    public String get(int level, int iteration) throws Exception {
+    public String get(int level) throws Exception {
         Connection con = null;
         Statement pstmt = null;
         String res = "";
@@ -147,8 +147,9 @@ public class GradientDataModel {
             con.setAutoCommit(false);
 
             pstmt = con.createStatement();
-            ResultSet rs = pstmt.executeQuery("SELECT true_gradient FROM " + tableName + 
-                            " WHERE level=" + level + " AND iteration=" + iteration + ";");
+            ResultSet rs = pstmt.executeQuery("SELECT * FROM " + tableName + 
+                " WHERE level = " + level + " GROUP BY level, iteration, true_gradient" + 
+                " ORDER BY timestamp ASC LIMIT 1;");
 
             if (rs != null) {
                 while (rs.next()) {

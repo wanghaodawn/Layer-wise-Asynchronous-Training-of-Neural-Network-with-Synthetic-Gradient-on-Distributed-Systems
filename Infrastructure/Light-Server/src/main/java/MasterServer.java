@@ -22,10 +22,6 @@ public class MasterServer {
     private static final String DNS = "localhost";
     private static final int PORT_NUM = 8000;
 
-    // Read file that contains the DNS of all slave nodes
-    private static boolean hasReadSlaveDNS = false;
-    private static List<String> slaveDNSList;
-
     // Input Data Model
     private static boolean hasInitInputDataModel = false;
     private static InputDataModel inputDataModel;
@@ -38,17 +34,6 @@ public class MasterServer {
 
 
     public static void main(final String[] args) throws Exception {
-        // Check input arguments
-        if (args == null || args.length != 1) {
-            System.err.println("Incorrect Number of Arguments");
-            System.exit(-1);
-        }
-
-        // Read Slave DNS
-        if (!hasReadSlaveDNS) {
-            readSlaveDNS(args[0]);
-            hasReadSlaveDNS = true;
-        }
 
         // Init InputDataModel
         try {
@@ -106,7 +91,7 @@ public class MasterServer {
                 }).build();
         server.start();
 
-        System.out.println("Started server at http://127.0.0.1:8080/  Hit ^C to stop");
+        System.out.println("Started server at http://127.0.0.1:8000/  Hit ^C to stop");
     }
 
 
@@ -155,6 +140,8 @@ public class MasterServer {
      * Handle Insert True Gradient
      */
     public static void handleInsertTrueGradient(final HttpServerExchange exchange) throws Exception {
+        System.out.println(exchange.getQueryParameters());
+
         // Missing any important information or not
         if (exchange.getQueryParameters().get("level") == null || 
             exchange.getQueryParameters().get("iteration") == null ||
@@ -197,28 +184,25 @@ public class MasterServer {
      */
     public static void handleGetTrueInput(final HttpServerExchange exchange) throws Exception {
         // Missing any important information or not
-        if (exchange.getQueryParameters().get("level") == null || 
-            exchange.getQueryParameters().get("iteration") == null) {
+        if (exchange.getQueryParameters().get("level") == null) {
             exchange.getResponseSender().send("Invalid request path for master");
             return;
         }
 
         // Parse parameters
         String levelStr = exchange.getQueryParameters().get("level").getFirst();
-        String iterationStr = exchange.getQueryParameters().get("iteration").getFirst();
 
-        int level = 0, iteration = 0;
+        int level = 0;
         try {
             level = Integer.parseInt(levelStr);
-            iteration = Integer.parseInt(iterationStr);
         } catch (NumberFormatException e) {
             e.printStackTrace();
-            exchange.getResponseSender().send("NumberFormatException in level or iteration");
+            exchange.getResponseSender().send("NumberFormatException in level");
             return;
         }
 
         // Insert the record into database
-        String true_input = inputDataModel.get(level, iteration);
+        String true_input = inputDataModel.get(level);
         if (true_input == null) {
             true_input = "";
         }
@@ -226,7 +210,7 @@ public class MasterServer {
 
         // Debug
         System.out.println("handleGetTrueInput:");
-        System.out.println("level: " + level + "\titeration: " + iteration);
+        System.out.println("level: " + level);
         System.out.println("true_input: " + true_input);
         System.out.println();
     }
@@ -237,28 +221,25 @@ public class MasterServer {
      */
     public static void handleGetTrueGradient(final HttpServerExchange exchange) throws Exception {
         // Missing any important information or not
-        if (exchange.getQueryParameters().get("level") == null || 
-            exchange.getQueryParameters().get("iteration") == null) {
+        if (exchange.getQueryParameters().get("level") == null) {
             exchange.getResponseSender().send("Invalid request path for master");
             return;
         }
 
         // Parse parameters
         String levelStr = exchange.getQueryParameters().get("level").getFirst();
-        String iterationStr = exchange.getQueryParameters().get("iteration").getFirst();
 
-        int level = 0, iteration = 0;
+        int level = 0;
         try {
             level = Integer.parseInt(levelStr);
-            iteration = Integer.parseInt(iterationStr);
         } catch (NumberFormatException e) {
             e.printStackTrace();
-            exchange.getResponseSender().send("NumberFormatException in level or iteration");
+            exchange.getResponseSender().send("NumberFormatException in level");
             return;
         }
 
         // Insert the record into database
-        String true_gradient = gradientDataModel.get(level, iteration);
+        String true_gradient = gradientDataModel.get(level);
         if (true_gradient == null) {
             true_gradient = "";
         }
@@ -266,36 +247,8 @@ public class MasterServer {
 
         // Debug
         System.out.println("handleGetTrueGradient:");
-        System.out.println("level: " + level + "\titeration: " + iteration);
+        System.out.println("level: " + level);
         System.out.println("true_gradient: " + true_gradient);
         System.out.println();
-    }
-
-
-    /**
-     * Get the DNS of all slave nodes
-     */
-    public static void readSlaveDNS(String fileName) throws Exception {
-
-        slaveDNSList = new ArrayList<String>();
-
-        File inFile = new File(fileName);
-        
-        // If file doesnt exists, then return error
-        if (!inFile.exists()) {
-            System.err.println("No file called: " + fileName);
-            System.exit(-1);
-        }
-
-        BufferedReader br = null;
-
-        // Read string from the input file
-        String sCurrentLine;
-        
-        br = new BufferedReader(new FileReader(inFile));
-
-        while ((sCurrentLine = br.readLine()) != null) {
-            slaveDNSList.add(sCurrentLine.trim());
-        }
     }
 }
