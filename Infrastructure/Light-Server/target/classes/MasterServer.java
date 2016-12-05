@@ -41,6 +41,10 @@ public class MasterServer {
                 inputDataModel = new InputDataModel(inputDataTableName);
             }
             inputDataModel.dropAllItems();
+            // inputDataModel.createIndex("level");
+            // inputDataModel.createIndex("iteration");
+            // inputDataModel.createIndex("timestamp");
+
             hasInitInputDataModel = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -52,6 +56,10 @@ public class MasterServer {
                 gradientDataModel = new GradientDataModel(gradientDataTableName);
             }
             gradientDataModel.dropAllItems();
+            // gradientDataModel.createIndex("level");
+            // gradientDataModel.createIndex("iteration");
+            // gradientDataModel.createIndex("timestamp");
+
             hasInitGradientDataModel = true;
         } catch (Exception e) {
             e.printStackTrace();

@@ -18,11 +18,13 @@ def remove_simbols(text):
             replace('\r', '\\r').\
             replace('\t', '\\t').\
             replace('\v', '\\v').\
-            replace('\"', '\\"')
+            replace('\"', '\\"').\
+            replace("\'", "\\'")
 
 
 def recover_simbols(text):
     return text.\
+            replace("\\'", "\'").\
             replace('\\"', '\"').\
             replace('\\v', '\v').\
             replace('\\t', '\t').\
@@ -48,7 +50,7 @@ def insert_true_gradient(level, iteration, true_gradient):
 
 
 def get_true_input(level):
-    level += 1
+    level -= 1
     url = master_url + "/get_true_input?"
     data = {'level': level}
     res = recover_simbols(requests.get(url, params=data).text)
@@ -56,7 +58,7 @@ def get_true_input(level):
 
 
 def get_true_gradient(level):
-    level -= 1
+    level += 1
     url = master_url + "/get_true_gradient?"
     data = {'level': level}
     res = recover_simbols(requests.get(url, params=data).text)

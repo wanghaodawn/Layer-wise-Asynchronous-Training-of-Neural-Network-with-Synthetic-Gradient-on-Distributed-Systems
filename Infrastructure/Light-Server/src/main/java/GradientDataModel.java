@@ -68,7 +68,7 @@ public class GradientDataModel {
     /**
      * Connect to MySQL Server
      */ 
-    private synchronized Connection getConnection() throws Exception {
+    public synchronized Connection getConnection() throws Exception {
         if (connectionPool.size() > 0) {
             return connectionPool.remove(connectionPool.size() - 1);
         }
@@ -91,14 +91,14 @@ public class GradientDataModel {
     /** 
      * Release connection
      */
-    private synchronized void releaseConnection(Connection con) {
+    public synchronized void releaseConnection(Connection con) {
         connectionPool.add(con);
     }
 
     /**
      * Insert new record using transaction
      */
-    public void insert(int level, int iteration, String true_input) throws Exception {
+    public void insert(int level, int iteration, String true_gradient) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
@@ -106,10 +106,10 @@ public class GradientDataModel {
             con.setAutoCommit(false);
             
             pstmt = con.prepareStatement("INSERT INTO " + tableName + 
-                                         "(level, iteration, true_gradient) VALUES(?, ?, ?);");
+                                         " (level, iteration, true_gradient) VALUES(?, ?, ?);");
             pstmt.setInt(1, level);
             pstmt.setInt(2, iteration);
-            pstmt.setString(3, true_input);
+            pstmt.setString(3, true_gradient);
 
             pstmt.executeUpdate();
 
@@ -142,7 +142,7 @@ public class GradientDataModel {
         Statement stmt = null;
         PreparedStatement pstmt = null;
         String res = "";
-        int iteration = 0;
+        int iteration = -1;
 
         try {
             con = getConnection();
@@ -159,13 +159,18 @@ public class GradientDataModel {
                     res = rs.getString("true_gradient");
                     iteration = rs.getInt("iteration");
                 }
+                System.out.println("[Gradient][GET]iteration: " + iteration);
 
-                pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
+                if (iteration != -1) {
+                    pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
                                              " AND iteration = " + iteration + ";");
 
-                pstmt.executeUpdate();
+                    pstmt.executeUpdate();
 
-                pstmt.close();
+                    pstmt.close();
+
+                    System.out.println("[Gradient][DELETE] level: " + level + "\titeration: " + iteration);
+                }
             }
 
             stmt.close();
@@ -199,9 +204,45 @@ public class GradientDataModel {
 
 
     /**
+     * Create Index on column
+     */
+    public void createIndex(String columnName) throws Exception {
+        Connection con = null;
+        Statement stmt = null;
+        String indexName = columnName + "_index";
+
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            
+            stmt = con.createStatement();
+            stmt.executeUpdate("CREATE INDEX " + indexName + " ON " + tableName + " (" + columnName + ");"
+            );
+            stmt.close();
+            
+            con.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (con != null) {
+                con.setAutoCommit(true);
+                releaseConnection(con);
+            }
+        }
+    }
+
+
+    /**
      * Create table if not exists using transaction
      */
-    private void createTable() throws Exception {
+    public void createTable() throws Exception {
         Connection con = null;
         Statement stmt = null;
         try {
