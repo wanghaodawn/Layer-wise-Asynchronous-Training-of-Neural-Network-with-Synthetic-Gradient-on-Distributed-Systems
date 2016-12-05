@@ -10,55 +10,63 @@ master_url = "http://127.0.0.1:8000"
 
 
 def remove_simbols(text):
-    return text.\
-            replace('\a', '\\a').\
-            replace('\b', '\\b').\
-            replace('\f', '\\f').\
-            replace('\n', '\\n').\
-            replace('\r', '\\r').\
-            replace('\t', '\\t').\
-            replace('\v', '\\v').\
-            replace('\"', '\\"')
+    return text
+    # return text.\
+    #         replace('\a', '\\a').\
+    #         replace('\b', '\\b').\
+    #         replace('\f', '\\f').\
+    #         replace('\n', '\\n').\
+    #         replace('\r', '\\r').\
+    #         replace('\t', '\\t').\
+    #         replace('\v', '\\v').\
+    #         replace('\"', '\\"').\
+    #         replace("\'", "\\'")
 
 
 def recover_simbols(text):
-    return text.\
-            replace('\\"', '\"').\
-            replace('\\v', '\v').\
-            replace('\\t', '\t').\
-            replace('\\r', '\r').\
-            replace('\\n', '\n').\
-            replace('\\f', '\f').\
-            replace('\\b', '\b').\
-            replace('\\a', '\a')
+    return text
+    # return text.\
+    #         replace("\\'", "\'").\
+    #         replace('\\"', '\"').\
+    #         replace('\\v', '\v').\
+    #         replace('\\t', '\t').\
+    #         replace('\\r', '\r').\
+    #         replace('\\n', '\n').\
+    #         replace('\\f', '\f').\
+    #         replace('\\b', '\b').\
+    #         replace('\\a', '\a')
 
 
 def insert_true_input(level, iteration, true_input):
     url = master_url + "/insert_true_input?"
-    data = {'level': level, 'iteration': iteration, 'true_input': remove_simbols(true_input)}
-    res = requests.post(url, params=data).text
+    data = {'level': level, 'iteration': iteration, 'true_input': remove_simbols(true_input).encode('ascii')}
+    print("len:" + str(len(true_input)))
+    print(url)
+    res = requests.post(url, data=data).text
     return res
 
 
 def insert_true_gradient(level, iteration, true_gradient):
-    url = master_url + "/insert_true_gradient"
-    data = {'level': level, 'iteration': iteration, 'true_gradient': remove_simbols(true_gradient)}
-    res = requests.post(url, params=data).text
+    url = master_url + "/insert_true_gradient?"
+    data = {'level': level, 'iteration': iteration, 'true_gradient': remove_simbols(true_gradient).encode('ascii')}
+    print("len:" + str(len(true_gradient)))
+    print(url)
+    res = requests.post(url, data=data).text
     return res
 
 
 def get_true_input(level):
-    level += 1
+    level -= 1
     url = master_url + "/get_true_input?"
     data = {'level': level}
-    res = recover_simbols(requests.get(url, params=data).text)
+    res = recover_simbols(requests.get(url, data=data).text).encode('ascii')
     return res
 
 
 def get_true_gradient(level):
-    level -= 1
+    level += 1
     url = master_url + "/get_true_gradient?"
     data = {'level': level}
-    res = recover_simbols(requests.get(url, params=data).text)
+    res = recover_simbols(requests.get(url, data=data).text).encode('ascii')
     return res
 

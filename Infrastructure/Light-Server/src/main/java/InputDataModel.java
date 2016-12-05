@@ -107,6 +107,9 @@ public class InputDataModel {
             
             pstmt = con.prepareStatement("INSERT INTO " + tableName + 
                                          " (level, iteration, true_input) VALUES(?, ?, ?);");
+
+            System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_input.length());
+
             pstmt.setInt(1, level);
             pstmt.setInt(2, iteration);
             pstmt.setString(3, true_input);
@@ -159,7 +162,7 @@ public class InputDataModel {
                     res = rs.getString("true_input");
                     iteration = rs.getInt("iteration");
                 }
-                System.out.println("[Input][GET] iteration: " + iteration);
+                System.out.println("[Input][GET] iteration: " + iteration + "\tlength: " + res.length());
 
                 if (iteration != -1) {
                     pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 

@@ -131,6 +131,8 @@ public class MasterServer {
 
         String true_input = exchange.getQueryParameters().get("true_input").getFirst();
 
+        System.out.println("[MASTER][INSERT][INPUT]" + true_input.length());
+
         // Insert the record into database
         inputDataModel.insert(level, iteration, true_input);
 
@@ -174,6 +176,8 @@ public class MasterServer {
 
         String true_gradient = exchange.getQueryParameters().get("true_gradient").getFirst();
 
+        System.out.println("[MASTER][GET][GRADIENT]" + true_gradient.length());
+
         // Insert the record into database
         gradientDataModel.insert(level, iteration, true_gradient);
 
@@ -214,6 +218,9 @@ public class MasterServer {
         if (true_input == null) {
             true_input = "";
         }
+
+        System.out.println("[MASTER][GET][INPUT]" + true_input.length());
+
         exchange.getResponseSender().send(true_input);
 
         // Debug
@@ -251,6 +258,9 @@ public class MasterServer {
         if (true_gradient == null) {
             true_gradient = "";
         }
+
+        System.out.println("[MASTER][GET][GRADIENT]" + true_gradient.length());
+
         exchange.getResponseSender().send(true_gradient);
 
         // Debug

@@ -107,6 +107,9 @@ public class GradientDataModel {
             
             pstmt = con.prepareStatement("INSERT INTO " + tableName + 
                                          " (level, iteration, true_gradient) VALUES(?, ?, ?);");
+
+            System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_gradient.length());
+
             pstmt.setInt(1, level);
             pstmt.setInt(2, iteration);
             pstmt.setString(3, true_gradient);
@@ -159,7 +162,7 @@ public class GradientDataModel {
                     res = rs.getString("true_gradient");
                     iteration = rs.getInt("iteration");
                 }
-                System.out.println("[Gradient][GET]iteration: " + iteration);
+                System.out.println("[Gradient][GET]iteration: " + iteration + "\tlength: " + res.length());
 
                 if (iteration != -1) {
                     pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
