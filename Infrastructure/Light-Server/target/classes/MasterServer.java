@@ -74,8 +74,6 @@ public class MasterServer {
                         // Get path and process the request
                         String path = exchange.getRequestPath();
 
-                        System.out.println(path);
-
                         // Request for master node
                         if (path.equals("/insert_true_input")) {
                             handleInsertTrueInput(exchange);
@@ -129,10 +127,10 @@ public class MasterServer {
         inputDataModel.insert(level, iteration, true_input);
 
         // Debug
-        System.out.println("handleInsertTrueInput:");
-        System.out.println("level: " + level + "\titeration: " + iteration);
-        System.out.println("true_input: " + true_input);
-        System.out.println();
+        // System.out.println("handleInsertTrueInput:");
+        // System.out.println("level: " + level + "\titeration: " + iteration);
+        // System.out.println("true_input: " + true_input);
+        // System.out.println();
 
         exchange.getResponseSender().send("Success");
     }
@@ -142,7 +140,7 @@ public class MasterServer {
      * Handle Insert True Gradient
      */
     public static void handleInsertTrueGradient(final HttpServerExchange exchange) throws Exception {
-        System.out.println(exchange.getQueryParameters());
+        // System.out.println(exchange.getQueryParameters());
 
         // Missing any important information or not
         if (exchange.getQueryParameters().get("level") == null || 
@@ -172,10 +170,10 @@ public class MasterServer {
         gradientDataModel.insert(level, iteration, true_gradient);
 
         // Debug
-        System.out.println("handleInsertTrueGradient:");
-        System.out.println("level: " + level + "\titeration: " + iteration);
-        System.out.println("true_gradient: " + true_gradient);
-        System.out.println();
+        // System.out.println("handleInsertTrueGradient:");
+        // System.out.println("level: " + level + "\titeration: " + iteration);
+        // System.out.println("true_gradient: " + true_gradient);
+        // System.out.println();
 
         exchange.getResponseSender().send("Success");
     }
@@ -211,10 +209,10 @@ public class MasterServer {
         exchange.getResponseSender().send(true_input);
 
         // Debug
-        System.out.println("handleGetTrueInput:");
-        System.out.println("level: " + level);
-        System.out.println("true_input: " + true_input);
-        System.out.println();
+        // System.out.println("handleGetTrueInput:");
+        // System.out.println("level: " + level);
+        // System.out.println("true_input: " + true_input);
+        // System.out.println();
     }
 
 
@@ -248,9 +246,9 @@ public class MasterServer {
         exchange.getResponseSender().send(true_gradient);
 
         // Debug
-        System.out.println("handleGetTrueGradient:");
-        System.out.println("level: " + level);
-        System.out.println("true_gradient: " + true_gradient);
-        System.out.println();
+        // System.out.println("handleGetTrueGradient:");
+        // System.out.println("level: " + level);
+        // System.out.println("true_gradient: " + true_gradient);
+        // System.out.println();
     }
 }

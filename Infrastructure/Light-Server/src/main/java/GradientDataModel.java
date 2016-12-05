@@ -139,25 +139,36 @@ public class GradientDataModel {
      */
     public String get(int level) throws Exception {
         Connection con = null;
-        Statement pstmt = null;
+        Statement stmt = null;
+        PreparedStatement pstmt = null;
         String res = "";
+        int iteration = 0;
 
         try {
             con = getConnection();
             con.setAutoCommit(false);
 
-            pstmt = con.createStatement();
-            ResultSet rs = pstmt.executeQuery("SELECT * FROM " + tableName + 
-                " WHERE level = " + level + " GROUP BY level, iteration, true_gradient" + 
-                " ORDER BY timestamp ASC LIMIT 1;");
+            stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + 
+                " WHERE level = " + level + " GROUP BY level, iteration, true_gradient, timestamp" + 
+                " ORDER BY timestamp ASC, iteration ASC LIMIT 1;");
 
+            // If not null, get the result and delete the oldest one
             if (rs != null) {
                 while (rs.next()) {
                     res = rs.getString("true_gradient");
+                    iteration = rs.getInt("iteration");
                 }
+
+                pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
+                                             " AND iteration = " + iteration + ";");
+
+                pstmt.executeUpdate();
+
+                pstmt.close();
             }
 
-            pstmt.close();
+            stmt.close();
             
             con.commit();
         } catch (Exception e) {
@@ -166,6 +177,13 @@ public class GradientDataModel {
             if (pstmt != null) {
                 try {
                     pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (stmt != null) {
+                try {
+                    stmt.close();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

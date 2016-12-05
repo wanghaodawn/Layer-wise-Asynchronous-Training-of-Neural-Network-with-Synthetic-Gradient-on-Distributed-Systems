@@ -36,27 +36,29 @@ def recover_simbols(text):
 def insert_true_input(level, iteration, true_input):
     url = master_url + "/insert_true_input?"
     data = {'level': level, 'iteration': iteration, 'true_input': remove_simbols(true_input)}
-    res = requests.post(url, data)
-    return res.text
+    res = requests.post(url, params=data).text
+    return res
 
 
 def insert_true_gradient(level, iteration, true_gradient):
-    url = master_url + "/insert_true_gradient?level=" + str(level) + "&iteration=" + str(iteration)
-    url += "&true_gradient=" + remove_simbols(true_gradient)
-    res = urllib2.urlopen(url).read()
+    url = master_url + "/insert_true_gradient"
+    data = {'level': level, 'iteration': iteration, 'true_gradient': remove_simbols(true_gradient)}
+    res = requests.post(url, params=data).text
     return res
 
 
 def get_true_input(level):
     level += 1
-    url = master_url + "/get_true_input?level=" + str(level)
-    res = recover_simbols(urllib2.urlopen(url).read())
+    url = master_url + "/get_true_input?"
+    data = {'level': level}
+    res = recover_simbols(requests.get(url, params=data).text)
     return res
 
 
 def get_true_gradient(level):
     level -= 1
-    url = master_url + "/get_true_gradient?level=" + str(level)
-    res = recover_simbols(urllib2.urlopen(url).read())
+    url = master_url + "/get_true_gradient?"
+    data = {'level': level}
+    res = recover_simbols(requests.get(url, params=data).text)
     return res
 
