@@ -1,0 +1,1 @@
+INSERT INTO data (level, x, w, y) VALUES();
