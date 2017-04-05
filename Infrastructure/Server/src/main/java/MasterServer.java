@@ -13,6 +13,7 @@ public class MasterServer {
     // Instance variables
     private static final String NODE_TYPE = "master";
     private static DataModel dataModel;
+    private static final String tableName = "masterData"
     private static HeartBeatModel heartBeatModel;
     private static boolean hasInitDataModel = false;
     private static boolean hasInitHeartBeatModel = false;
@@ -21,16 +22,17 @@ public class MasterServer {
     private static final int RETRY_INTERVAL = 1000;
     private static Map<String, Integer> healthMap = new HashMap<String, Integer>();
     private static boolean hasInitMap = false;
-    
-    private static String[] coreURL = new String[]{"http://localhost:8080"};
+
+    private static final String[] coreURL = new String[]{"http://localhost:8080"};
 
     public static void main(final String[] args) {
 
         // Init model
         try {
             if (!hasInitDataModel) {
-                dataModel = new DataModel();
+                dataModel = new DataModel(tableName);
             }
+            dataModel.dropAllItems();
             hasInitDataModel = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,6 +42,7 @@ public class MasterServer {
             if (!hasInitHeartBeatModel) {
                 heartBeatModel = new HeartBeatModel();
             }
+            heartBeatModel.dropAllItems();
             hasInitHeartBeatModel = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -58,8 +61,8 @@ public class MasterServer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
 
+        // Server
         Undertow server = Undertow.builder()
                 .addListener(8000, "localhost")
                 .setHandler(new HttpHandler() {
@@ -114,9 +117,7 @@ public class MasterServer {
 
                             // Invalid request
                             if (exchange.getQueryParameters().get("level") == null || 
-                                exchange.getQueryParameters().get("x") == null || 
-                                exchange.getQueryParameters().get("w") == null || 
-                                exchange.getQueryParameters().get("y") == null) {
+                                exchange.getQueryParameters().get("w") == null) {
                                 exchange.getResponseSender().send("Invalid request path for master");
                                 return;
                             }
@@ -132,22 +133,18 @@ public class MasterServer {
                                 return;
                             }
 
-                            String xStr = exchange.getQueryParameters().get("x").getFirst();
                             String wStr = exchange.getQueryParameters().get("w").getFirst();
-                            String yStr = exchange.getQueryParameters().get("y").getFirst();
 
                             // Insert the record into database
-                            dataModel.insert(level, xStr, wStr, yStr);
+                            dataModel.insert(level, wStr);
 
                             System.out.println("level: " + level);
-                            System.out.println("x: " + xStr);
                             System.out.println("w: " + wStr);
-                            System.out.println("y: " + yStr);
                             System.out.println();
 
                             return;
-                        } 
-                        
+                        }
+
                         // Invalid requeset
                         exchange.getResponseSender().send("Invalid request path, should be " + NODE_TYPE);
                     }
@@ -166,8 +163,9 @@ public class MasterServer {
             public void run() {
 
                 while (true) {
-                    
+                    int level = 0;
                     for (String url : coreURL) {
+                        level++;
 
                         // Skip failed server
                         if (healthMap.get(url) == 2) {
@@ -221,7 +219,7 @@ public class MasterServer {
                                     e.printStackTrace();
                                 }
                                 // Insert heartbeat data into database
-                                heartBeatModel.insert(util);
+                                heartBeatModel.insert(level, util);
 
                                 // If succeed, break
                                 break;

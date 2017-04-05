@@ -30,6 +30,41 @@ public class DataModel {
     }
 
     /**
+     * Drop all items
+     */
+    public void dropAllItems() throws Exception {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            
+            pstmt = con.prepareStatement("DELETE FROM " + tableName + ";");
+
+            pstmt.executeUpdate();
+
+            pstmt.close();
+            
+            con.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (con != null) {
+                con.setAutoCommit(true);
+                releaseConnection(con);
+            }
+        }
+    }
+    
+
+    /**
      * Connect to MySQL Server
      */ 
     private synchronized Connection getConnection() throws Exception {

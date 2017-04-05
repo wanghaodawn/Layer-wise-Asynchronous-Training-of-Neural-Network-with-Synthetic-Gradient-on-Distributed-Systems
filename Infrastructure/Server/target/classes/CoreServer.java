@@ -11,6 +11,7 @@ import com.sun.management.OperatingSystemMXBean;
 public class CoreServer {
     // Instance variables
     private static final String NODE_TYPE = "core";
+    private static final int currLevel = 1;
 
     public static void main(final String[] args) {
         Undertow server = Undertow.builder()

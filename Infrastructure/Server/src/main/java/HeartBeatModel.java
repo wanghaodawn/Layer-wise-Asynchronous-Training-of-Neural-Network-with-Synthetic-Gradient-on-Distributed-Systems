@@ -30,6 +30,40 @@ public class HeartBeatModel {
     }
 
     /**
+     * Drop all items
+     */
+    public void dropAllItems() throws Exception {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            
+            pstmt = con.prepareStatement("DELETE FROM " + tableName + ";");
+
+            pstmt.executeUpdate();
+
+            pstmt.close();
+            
+            con.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (con != null) {
+                con.setAutoCommit(true);
+                releaseConnection(con);
+            }
+        }
+    }
+
+    /**
      * Connect to MySQL Server
      */ 
     private synchronized Connection getConnection() throws Exception {
@@ -62,16 +96,17 @@ public class HeartBeatModel {
     /**
      * Insert new record using transaction
      */
-    public void insert(double util) throws Exception {
+    public void insert(int level, double util) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
             con = getConnection();
             con.setAutoCommit(false);
             
-            pstmt = con.prepareStatement("INSERT INTO " + tableName + "(util) VALUES(?);");
+            pstmt = con.prepareStatement("INSERT INTO " + tableName + "(level, util) VALUES(?, ?);");
 
-            pstmt.setDouble(1, util);
+            pstmt.setInt(1, level);
+            pstmt.setDouble(2, util);
 
             pstmt.executeUpdate();
 
@@ -107,7 +142,7 @@ public class HeartBeatModel {
             
             stmt = con.createStatement();
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + 
-                " (id SERIAL, util DOUBLE NOT NULL, " +
+                " (id SERIAL, level INT NOT NULL, util DOUBLE NOT NULL, " +
                 "timestamp TIMESTAMP NOT NULL DEFAULT NOW()," +
                 "PRIMARY KEY (id));"
             );

@@ -21,7 +21,7 @@ public class MasterServer {
     private static final int RETRY_INTERVAL = 1000;
     private static Map<String, Integer> healthMap = new HashMap<String, Integer>();
     private static boolean hasInitMap = false;
-    
+
     private static String[] coreURL = new String[]{"http://localhost:8080"};
 
     public static void main(final String[] args) {
@@ -31,6 +31,7 @@ public class MasterServer {
             if (!hasInitDataModel) {
                 dataModel = new DataModel();
             }
+            dataModel.dropAllItems();
             hasInitDataModel = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,6 +41,7 @@ public class MasterServer {
             if (!hasInitHeartBeatModel) {
                 heartBeatModel = new HeartBeatModel();
             }
+            heartBeatModel.dropAllItems();
             hasInitHeartBeatModel = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -58,7 +60,6 @@ public class MasterServer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
 
         Undertow server = Undertow.builder()
                 .addListener(8000, "localhost")
@@ -146,8 +147,8 @@ public class MasterServer {
                             System.out.println();
 
                             return;
-                        } 
-                        
+                        }
+
                         // Invalid requeset
                         exchange.getResponseSender().send("Invalid request path, should be " + NODE_TYPE);
                     }
@@ -166,14 +167,22 @@ public class MasterServer {
             public void run() {
 
                 while (true) {
-                    
+                    int level = 0;
                     for (String url : coreURL) {
+                        level++;
+
+                        // Skip failed server
+                        if (healthMap.get(url) == 2) {
+                            continue;
+                        }
+
                         // Maximum retry times for each server
                         int i = 0;
                         for (; i < MAX_RETRY_TIMES; i++) {
 
                             try {
                                 URL obj = new URL(url + "/heartbeat?");
+                                System.out.println(url + "/heartbeat?");
                                 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
                                 // Optional, default is GET
@@ -215,7 +224,7 @@ public class MasterServer {
                                     e.printStackTrace();
                                 }
                                 // Insert heartbeat data into database
-                                heartBeatModel.insert(util);
+                                heartBeatModel.insert(level, util);
 
                                 // If succeed, break
                                 break;

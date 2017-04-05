@@ -101,20 +101,47 @@ public class GradientDataModel {
     public void insert(int level, int iteration, String true_gradient) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
+        Statement stmt = null;
+
         try {
             con = getConnection();
             con.setAutoCommit(false);
-            
-            pstmt = con.prepareStatement("INSERT INTO " + tableName + 
+
+            // Get count
+            stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + " AND iteration = " + iteration + ";");
+            int count = 0;
+            if (rs != null) {
+                while (rs.next()) {
+                    count = rs.getInt("count");
+                }
+            }
+
+            if (count != 0) {
+                // Update
+                pstmt = con.prepareStatement("UPDATE " + tableName + 
+                                         " SET true_gradient = ? WHERE level = ? AND iteration = ?;");
+
+                System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_gradient.length());
+
+                pstmt.setString(1, true_gradient);
+                pstmt.setInt(2, level);
+                pstmt.setInt(3, iteration);
+
+                pstmt.executeUpdate();
+            } else {
+                // Insert
+                pstmt = con.prepareStatement("INSERT INTO " + tableName + 
                                          " (level, iteration, true_gradient) VALUES(?, ?, ?);");
 
-            System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_gradient.length());
+                System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_gradient.length());
 
-            pstmt.setInt(1, level);
-            pstmt.setInt(2, iteration);
-            pstmt.setString(3, true_gradient);
+                pstmt.setInt(1, level);
+                pstmt.setInt(2, iteration);
+                pstmt.setString(3, true_gradient);
 
-            pstmt.executeUpdate();
+                pstmt.executeUpdate();
+            }
 
             pstmt.close();
             
@@ -162,7 +189,18 @@ public class GradientDataModel {
                     res = rs.getString("true_gradient");
                     iteration = rs.getInt("iteration");
                 }
+                res += "\t" + iteration;
                 System.out.println("[Gradient][GET]iteration: " + iteration + "\tlength: " + res.length());
+
+                // Get count
+                rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + ";");
+                int count = 0;
+                if (rs != null) {
+                    while (rs.next()) {
+                        count = rs.getInt("count");
+                    }
+                }
+                System.out.println("[Gradient][GET][BEFORE DELETE] remains: " + count);
 
                 if (iteration != -1) {
                     pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
@@ -173,6 +211,16 @@ public class GradientDataModel {
                     pstmt.close();
 
                     System.out.println("[Gradient][DELETE] level: " + level + "\titeration: " + iteration);
+
+                    // Get count
+                    rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + ";");
+                    count = 0;
+                    if (rs != null) {
+                        while (rs.next()) {
+                            count = rs.getInt("count");
+                        }
+                    }
+                    System.out.println("[Gradient][GET][AFTER DELETE] remains: " + count);
                 }
             }
 
@@ -254,7 +302,7 @@ public class GradientDataModel {
             
             stmt = con.createStatement();
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + 
-                " (level INT NOT NULL, iteration INT NOT NULL, true_gradient TEXT, " +
+                " (level INT NOT NULL, iteration INT NOT NULL, true_gradient LONGTEXT, " +
                 "timestamp TIMESTAMP NOT NULL DEFAULT NOW()," +
                 "PRIMARY KEY (level, iteration));"
             );

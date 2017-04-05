@@ -13,18 +13,18 @@ import java.sql.Statement;
 
 import java.util.*;
 
-public class HeartBeatModel {
+public class CoreLocalDataModel {
     // Instance variables
     private List<Connection> connectionPool = new ArrayList<Connection>();
     private final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private final String DB_NAME = "test";
     private final String JDBC_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false";
-    private final String tableName = "heart_beat";
+    private final String tableName = "core_local_data";
 
     /**
      * Constructor
      */
-    public HeartBeatModel() throws Exception {
+    public DataModel() throws Exception {
         // Create table if not exists
         createTable();
     }
@@ -62,6 +62,7 @@ public class HeartBeatModel {
             }
         }
     }
+    
 
     /**
      * Connect to MySQL Server
@@ -96,17 +97,19 @@ public class HeartBeatModel {
     /**
      * Insert new record using transaction
      */
-    public void insert(int level, double util) throws Exception {
+    public void insert(int level, String x, String w, String y) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
             con = getConnection();
             con.setAutoCommit(false);
             
-            pstmt = con.prepareStatement("INSERT INTO " + tableName + "(level, util) VALUES(?, ?);");
-
+            pstmt = con.prepareStatement("INSERT INTO " + tableName + 
+                                                    "(x, w, y) VALUES(?,?,?);");
             pstmt.setInt(1, level);
-            pstmt.setDouble(2, util);
+            pstmt.setString(2, x);
+            pstmt.setString(3, w);
+            pstmt.setString(4, y);
 
             pstmt.executeUpdate();
 
@@ -142,7 +145,7 @@ public class HeartBeatModel {
             
             stmt = con.createStatement();
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + 
-                " (id SERIAL, level INT NOT NULL, util DOUBLE NOT NULL, " +
+                " (id SERIAL, x TEXT, w TEXT, y TEXT, " +
                 "timestamp TIMESTAMP NOT NULL DEFAULT NOW()," +
                 "PRIMARY KEY (id));"
             );

@@ -19,15 +19,52 @@ public class DataModel {
     private final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private final String DB_NAME = "test";
     private final String JDBC_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false";
-    private final String tableName = "data";
+    private String tableName;
 
     /**
      * Constructor
      */
-    public DataModel() throws Exception {
+    public DataModel(String tableName) throws Exception {
         // Create table if not exists
         createTable();
+
+        this.tableName = tableName;
     }
+
+    /**
+     * Drop all items
+     */
+    public void dropAllItems() throws Exception {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            
+            pstmt = con.prepareStatement("DELETE FROM " + tableName + ";");
+
+            pstmt.executeUpdate();
+
+            pstmt.close();
+            
+            con.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (con != null) {
+                con.setAutoCommit(true);
+                releaseConnection(con);
+            }
+        }
+    }
+    
 
     /**
      * Connect to MySQL Server
@@ -62,7 +99,7 @@ public class DataModel {
     /**
      * Insert new record using transaction
      */
-    public void insert(int level, String x, String w, String y) throws Exception {
+    public void insert(int level, String w) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
@@ -70,11 +107,9 @@ public class DataModel {
             con.setAutoCommit(false);
             
             pstmt = con.prepareStatement("INSERT INTO " + tableName + 
-                                                    "(level, x, w, y) VALUES(?,?,?,?);");
+                                                    "(level, x) VALUES(?,?);");
             pstmt.setInt(1, level);
-            pstmt.setString(2, x);
-            pstmt.setString(3, w);
-            pstmt.setString(4, y);
+            pstmt.setString(2, w);
 
             pstmt.executeUpdate();
 
@@ -110,7 +145,7 @@ public class DataModel {
             
             stmt = con.createStatement();
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + 
-                " (id SERIAL, level INT NOT NULL, x TEXT, w TEXT, y TEXT, " +
+                " (id SERIAL, level INT NOT NULL, w TEXT, BP" +
                 "timestamp TIMESTAMP NOT NULL DEFAULT NOW()," +
                 "PRIMARY KEY (id));"
             );

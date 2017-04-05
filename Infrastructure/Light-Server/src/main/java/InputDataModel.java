@@ -101,20 +101,47 @@ public class InputDataModel {
     public void insert(int level, int iteration, String true_input) throws Exception {
         Connection con = null;
         PreparedStatement pstmt = null;
+        Statement stmt = null;
+
         try {
             con = getConnection();
             con.setAutoCommit(false);
+
+            // Get count
+            stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + " AND iteration = " + iteration + ";");
+            int count = 0;
+            if (rs != null) {
+                while (rs.next()) {
+                    count = rs.getInt("count");
+                }
+            }
             
-            pstmt = con.prepareStatement("INSERT INTO " + tableName + 
+            if (count != 0) {
+                // Update
+                pstmt = con.prepareStatement("UPDATE " + tableName + 
+                                         " SET true_input = ? WHERE level = ? AND iteration = ?;");
+
+                System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_input.length());
+
+                pstmt.setString(1, true_input);
+                pstmt.setInt(2, level);
+                pstmt.setInt(3, iteration);
+
+                pstmt.executeUpdate();
+            } else {
+                // Insert
+                pstmt = con.prepareStatement("INSERT INTO " + tableName + 
                                          " (level, iteration, true_input) VALUES(?, ?, ?);");
 
-            System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_input.length());
+                System.out.println("[Gradient][INSERT]iteration: " + iteration + "\tlength: " + true_input.length());
 
-            pstmt.setInt(1, level);
-            pstmt.setInt(2, iteration);
-            pstmt.setString(3, true_input);
+                pstmt.setInt(1, level);
+                pstmt.setInt(2, iteration);
+                pstmt.setString(3, true_input);
 
-            pstmt.executeUpdate();
+                pstmt.executeUpdate();
+            }
 
             pstmt.close();
             
@@ -162,8 +189,20 @@ public class InputDataModel {
                     res = rs.getString("true_input");
                     iteration = rs.getInt("iteration");
                 }
+                res += "\t" + iteration;
                 System.out.println("[Input][GET] iteration: " + iteration + "\tlength: " + res.length());
 
+                // Get count
+                rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + ";");
+                int count = 0;
+                if (rs != null) {
+                    while (rs.next()) {
+                        count = rs.getInt("count");
+                    }
+                }
+                System.out.println("[Input][GET][BEFORE DELETE] remains: " + count);
+
+                // Delete
                 if (iteration != -1) {
                     pstmt = con.prepareStatement("DELETE FROM " + tableName + " WHERE level = " + level + 
                                              " AND iteration = " + iteration + ";");
@@ -173,6 +212,16 @@ public class InputDataModel {
                     pstmt.close();
 
                     System.out.println("[Input][DELETE] level: " + level + "\titeration: " + iteration);
+
+                    // Get count
+                    rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM " + tableName + " WHERE level = " + level + ";");
+                    count = 0;
+                    if (rs != null) {
+                        while (rs.next()) {
+                            count = rs.getInt("count");
+                        }
+                    }
+                    System.out.println("[Input][GET][AFTER DELETE] remains: " + count);
                 }
             }
 
@@ -254,7 +303,7 @@ public class InputDataModel {
             
             stmt = con.createStatement();
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + 
-                " (level INT NOT NULL, iteration INT NOT NULL, true_input TEXT, " +
+                " (level INT NOT NULL, iteration INT NOT NULL, true_input LONGTEXT, " +
                 "timestamp TIMESTAMP NOT NULL DEFAULT NOW()," +
                 "PRIMARY KEY (level, iteration));"
             );
